@@ -1,0 +1,24 @@
+# Nextflow
+work/
+.nextflow/
+.nextflow.log*
+results/
+
+# raw sequencing data and reference databases -- these are large,
+# run-specific, and not part of the pipeline itself. A small synthetic
+# dataset for -profile test lives under tests/data/ instead, and is
+# tracked normally.
+/data/
+assets/db_cache/
+
+# personal/local
+scratch.sh
+notes.md
+notes.sh
+
+# Python
+__pycache__/
+
+# OS
+.DS_Store
+**/.DS_Store
