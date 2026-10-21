@@ -19,9 +19,11 @@ nextflow.enable.dsl = 2
 include { WF_SHOTGUN         } from './workflows/shotgun.nf'
 include { FETCH_DEACON_INDEX } from './modules/fetch_deacon_index.nf'
 include { BUILD_DEACON_INDEX } from './modules/build_deacon_index.nf'
+include { FETCH_KRAKEN2_DB; kraken2Dbs } from './modules/fetch_kraken2_db.nf'
+include { BUILD_KRAKEN2_DB   } from './modules/build_kraken2_db.nf'
 
 // ---- top-level params (override via -params-file or --flag) ----
-// filtering/host-removal defaults live in nextflow.config, not here --
+// filtering/host-removal/classification defaults live in nextflow.config, not here --
 // anything read directly inside an included module or workflow script
 // (rather than only inside this file's own `workflow` block) must be set
 // there to be reliably visible by the time that module/workflow script runs
@@ -41,6 +43,15 @@ def helpMessage() {
 
     Key optional:
       --min_len / --min_qual   chopper filtering thresholds (default ${params.min_len} bp / Q${params.min_qual})
+      --kraken2_db  Kraken2 database, downloaded once and cached (default ${params.kraken2_db}):
+                      pluspf16   PlusPF-16: RefSeq bacteria, archaea, viruses, plasmids,
+                                 human, protozoa and fungi, capped at 16 GB (needs ~20 GB RAM)
+                      pluspf8    PlusPF-8: the same, capped at 8 GB (needs ~10 GB RAM) --
+                                 less sensitive, for testing or smaller machines
+      --min_reads / --min_rel_abundance
+                    taxa with fewer reads, or a smaller fraction of the sample's
+                    reads, get below_threshold=true in taxon_abundance.tsv, not
+                    dropped (default ${params.min_reads} / ${params.min_rel_abundance}, 0 = off)
       --host_fasta  build the host-removal index from this FASTA instead of
                     downloading the panhuman-1 human pangenome index
     """.stripIndent()
@@ -73,6 +84,18 @@ def checkParams() {
     if (!(params.min_qual instanceof Number) || params.min_qual < 0) {
         problems << "--min_qual must be a number >= 0 (got '${params.min_qual}')"
     }
+    if (!(params.kraken2_db in kraken2Dbs())) {
+        problems << "--kraken2_db must be one of ${kraken2Dbs().keySet().join(', ')} (got '${params.kraken2_db}')"
+    }
+    if (!(params.min_reads instanceof Integer) || params.min_reads < 0) {
+        problems << "--min_reads must be a whole number >= 0 (got '${params.min_reads}')"
+    }
+    if (!(params.min_rel_abundance instanceof Number) || params.min_rel_abundance < 0 || params.min_rel_abundance > 1) {
+        problems << "--min_rel_abundance must be a fraction from 0 to 1 (got '${params.min_rel_abundance}')"
+    }
+    if ((params.kraken2_build_fasta as boolean) != (params.kraken2_build_taxonomy as boolean)) {
+        problems << "--kraken2_build_fasta and --kraken2_build_taxonomy go together: set both or neither"
+    }
     if (problems) {
         problems.each { log.error it }
         exit 1
@@ -94,5 +117,18 @@ workflow {
         host_index_ch = FETCH_DEACON_INDEX.out.index
     }
 
-    WF_SHOTGUN(samplesheetToChannel(params.input), host_index_ch)
+    // same idea for the Kraken2 database: the test profile builds a tiny
+    // one from its synthetic genomes instead of downloading PlusPF
+    if (params.kraken2_build_fasta) {
+        BUILD_KRAKEN2_DB(
+            Channel.fromPath(params.kraken2_build_fasta, checkIfExists: true).collect(),
+            Channel.fromPath(params.kraken2_build_taxonomy, type: 'dir', checkIfExists: true)
+        )
+        kraken2_db_ch = BUILD_KRAKEN2_DB.out.db
+    } else {
+        FETCH_KRAKEN2_DB(params.kraken2_db)
+        kraken2_db_ch = FETCH_KRAKEN2_DB.out.db
+    }
+
+    WF_SHOTGUN(samplesheetToChannel(params.input), host_index_ch, kraken2_db_ch)
 }

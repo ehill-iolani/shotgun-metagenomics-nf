@@ -1,0 +1,16 @@
+1	|	1	|	no rank	|
+131567	|	1	|	cellular root	|
+100	|	131567	|	domain	|
+200	|	100	|	phylum	|
+300	|	200	|	class	|
+400	|	300	|	order	|
+500	|	400	|	family	|
+600	|	500	|	genus	|
+1001	|	600	|	species	|
+1002	|	600	|	species	|
+210	|	100	|	phylum	|
+410	|	210	|	order	|
+510	|	410	|	family	|
+610	|	510	|	genus	|
+1003	|	610	|	species	|
+2003	|	1003	|	strain	|

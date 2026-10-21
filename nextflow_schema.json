@@ -72,6 +72,49 @@
         }
       }
     },
+    "taxonomic_classification": {
+      "title": "Taxonomic classification",
+      "type": "object",
+      "description": "Kraken2 classifies each host-removed read against a prebuilt RefSeq database.",
+      "properties": {
+        "kraken2_db": {
+          "type": "string",
+          "default": "pluspf16",
+          "enum": ["pluspf16", "pluspf8"],
+          "description": "Kraken2 database, downloaded once and cached.",
+          "help_text": "Both are the Langmead lab's June 2026 PlusPF build: RefSeq bacteria, archaea, viruses, plasmids, human, protozoa and fungi. pluspf16 (the default) is capped at 16 GB and needs about 20 GB of memory; pluspf8 is capped at 8 GB, needs about 10 GB, and misses more reads -- use it for testing or on a smaller machine, not for results you'll report."
+        },
+        "min_reads": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 0,
+          "description": "Taxa with fewer reads than this get below_threshold = true.",
+          "help_text": "Counts the reads Kraken2 assigned directly to the taxon. Flag-only: the taxon is still in taxon_abundance.tsv, with below_threshold = true. 0 disables."
+        },
+        "min_rel_abundance": {
+          "type": "number",
+          "default": 0.0001,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Taxa holding a smaller fraction of their sample's reads than this get below_threshold = true.",
+          "help_text": "The depth-independent counterpart of min_reads, as a fraction of the sample's host-removed reads: 0.0001 marks anything under 0.01%. A taxon is marked if it fails either cutoff. 0 disables."
+        },
+        "kraken2_build_fasta": {
+          "type": "string",
+          "description": "Genome FASTA(s) to build the Kraken2 database from, instead of downloading kraken2_db.",
+          "help_text": "A path or glob; needs kraken2_build_taxonomy too. For the test profile's synthetic genomes.",
+          "hidden": true
+        },
+        "kraken2_build_taxonomy": {
+          "type": "string",
+          "format": "directory-path",
+          "exists": true,
+          "description": "Taxonomy for kraken2_build_fasta: a directory with nodes.dmp, names.dmp and seqid2taxid.map.",
+          "help_text": "nodes.dmp and names.dmp in NCBI's dump format; seqid2taxid.map gives each FASTA sequence ID's taxid, tab-separated.",
+          "hidden": true
+        }
+      }
+    },
     "container_images": {
       "title": "Container images",
       "type": "object",
@@ -80,7 +123,7 @@
         "container_registry": {
           "type": "string",
           "default": "quay.io",
-          "description": "Registry for the biocontainers images (chopper, deacon, pandas).",
+          "description": "Registry for the biocontainers images (chopper, deacon, kraken2, pandas).",
           "help_text": "The google_batch profile points this at the project's own Artifact Registry mirror (see scripts/mirror_images.sh) so Batch VMs don't pull from quay.io; pass --container_registry quay.io to pull from upstream instead. The mirror keeps each image's upstream path, so only the host changes.",
           "hidden": true
         },
@@ -118,6 +161,7 @@
     { "$ref": "#/$defs/input_output_options" },
     { "$ref": "#/$defs/read_filtering" },
     { "$ref": "#/$defs/host_removal" },
+    { "$ref": "#/$defs/taxonomic_classification" },
     { "$ref": "#/$defs/container_images" },
     { "$ref": "#/$defs/generic_options" }
   ]

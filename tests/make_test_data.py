@@ -14,6 +14,13 @@ few too-short and low-quality ones that chopper should drop. Output is
 deterministic (fixed seed, gzip mtime 0), so rerunning without changes
 leaves git with nothing to commit.
 
+The microbes get a made-up NCBI-style taxonomy (kraken2_taxonomy/), which
+the test profile builds its Kraken2 database from instead of downloading
+PlusPF. It uses NCBI's current rank names (`cellular root`, `domain`) and
+leaves gaps -- no kingdom anywhere, no class above microbe_c, a strain
+below a species -- so the lineage columns of taxon_abundance.tsv get
+exercised.
+
   python3 tests/make_test_data.py
 """
 import gzip
@@ -29,6 +36,26 @@ SAMPLES = {
     "sample_a": {"host": 30, "microbe_a": 40, "microbe_b": 15, "microbe_c": 5},
     "sample_b": {"host": 5, "microbe_a": 5, "microbe_b": 20, "microbe_c": 30},
 }
+# (taxid, parent, rank, name); genome names in GENOME_TAXIDS
+TAXONOMY = [
+    (1, 1, "no rank", "root"),
+    (131567, 1, "cellular root", "cellular organisms"),
+    (100, 131567, "domain", "Fakebacteria"),
+    (200, 100, "phylum", "Mockota"),
+    (300, 200, "class", "Mockia"),
+    (400, 300, "order", "Mockales"),
+    (500, 400, "family", "Mockaceae"),
+    (600, 500, "genus", "Mockus"),
+    (1001, 600, "species", "Mockus alpha"),
+    (1002, 600, "species", "Mockus beta"),
+    (210, 100, "phylum", "Testota"),
+    (410, 210, "order", "Testales"),
+    (510, 410, "family", "Testaceae"),
+    (610, 510, "genus", "Testella"),
+    (1003, 610, "species", "Testella gamma"),
+    (2003, 1003, "strain", "Testella gamma C1"),
+]
+GENOME_TAXIDS = {"microbe_a": 1001, "microbe_b": 1002, "microbe_c": 2003}
 N_SHORT = 5    # < min_len 500
 N_LOW_Q = 5    # mean Q7, < min_qual 10
 GOOD_Q, LOW_Q = 20, 7
@@ -93,6 +120,19 @@ def main():
         fh.write("sample,fastq\n")
         for sample in SAMPLES:
             fh.write(f"{sample},tests/data/reads/{sample}/*.fastq.gz\n")
+
+    # NCBI dump format: fields joined by "\t|\t", each line ending "\t|"
+    tax_dir = os.path.join(OUT, "kraken2_taxonomy")
+    os.makedirs(tax_dir, exist_ok=True)
+    with open(os.path.join(tax_dir, "nodes.dmp"), "w") as fh:
+        for taxid, parent, rank, _ in TAXONOMY:
+            fh.write(f"{taxid}\t|\t{parent}\t|\t{rank}\t|\n")
+    with open(os.path.join(tax_dir, "names.dmp"), "w") as fh:
+        for taxid, _, _, name in TAXONOMY:
+            fh.write(f"{taxid}\t|\t{name}\t|\t\t|\tscientific name\t|\n")
+    with open(os.path.join(tax_dir, "seqid2taxid.map"), "w") as fh:
+        for genome, taxid in GENOME_TAXIDS.items():
+            fh.write(f"{genome}\t{taxid}\n")
 
 
 if __name__ == "__main__":
