@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/ehill-iolani/shotgun-metagenomics-nf/main/nextflow_schema.json",
+  "title": "shotgun-metagenomics-nf pipeline parameters",
+  "description": "ONT shotgun metagenomics for Rapid Barcoding Kit (no PCR) reads: read QC, human read removal, taxonomic classification and AMR gene detection.",
+  "type": "object",
+  "$defs": {
+    "input_output_options": {
+      "title": "Input/output options",
+      "type": "object",
+      "description": "Define where the pipeline should find input data and save output data.",
+      "required": ["input"],
+      "properties": {
+        "input": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "mimetype": "text/csv",
+          "pattern": "^\\S+\\.csv$",
+          "description": "Samplesheet CSV with two columns: sample,fastq.",
+          "help_text": "Each row maps a sample name to a fastq file or glob (e.g. `data/barcode17/*.fastq.gz`). A glob may match multiple part-files -- they're merged into one file per sample before filtering. Glob paths resolve relative to the launch directory, not the samplesheet's own location."
+        },
+        "outdir": {
+          "type": "string",
+          "format": "directory-path",
+          "default": "results",
+          "description": "Output directory where results are published."
+        }
+      }
+    },
+    "read_filtering": {
+      "title": "Read filtering",
+      "type": "object",
+      "description": "chopper length/quality filtering, before anything else.",
+      "properties": {
+        "min_len": {
+          "type": "integer",
+          "default": 500,
+          "minimum": 1,
+          "description": "Minimum read length (bp).",
+          "help_text": "Rapid-kit reads have no fixed length, so there's no maximum. Shorter reads are harder to classify reliably and can't cover a whole AMR gene."
+        },
+        "min_qual": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 0,
+          "description": "Minimum average read quality (Phred score).",
+          "help_text": "Q10 is about 1 error in 10 bases. R10.4.1 reads basecalled with dorado hac or sup are mostly well above this, so it mainly drops failed reads."
+        }
+      }
+    },
+    "host_removal": {
+      "title": "Host read removal",
+      "type": "object",
+      "description": "Deacon removes human reads before anything is published.",
+      "properties": {
+        "host_fasta": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "pattern": "^\\S+\\.(fa|fasta|fna)(\\.gz)?$",
+          "description": "Host genome FASTA to build the removal index from, instead of the human pangenome.",
+          "help_text": "Unset (the default), human reads are removed with Deacon's prebuilt panhuman-1 index. Set, an index is built from this FASTA instead, and human reads are then NOT removed unless it includes a human genome.",
+          "hidden": true
+        },
+        "db_cache": {
+          "type": "string",
+          "format": "directory-path",
+          "default": "assets/db_cache",
+          "description": "Where downloaded databases are cached between runs.",
+          "hidden": true
+        }
+      }
+    },
+    "container_images": {
+      "title": "Container images",
+      "type": "object",
+      "description": "Where each tool's container image is pulled from.",
+      "properties": {
+        "container_registry": {
+          "type": "string",
+          "default": "quay.io",
+          "description": "Registry for the biocontainers images (chopper, deacon, pandas).",
+          "help_text": "The google_batch profile points this at the project's own Artifact Registry mirror (see scripts/mirror_images.sh) so Batch VMs don't pull from quay.io; pass --container_registry quay.io to pull from upstream instead. The mirror keeps each image's upstream path, so only the host changes.",
+          "hidden": true
+        },
+        "dockerhub_registry": {
+          "type": "string",
+          "default": "docker.io",
+          "description": "Registry for the Docker Hub images (ubuntu, for database downloads and on Batch).",
+          "help_text": "Same idea as container_registry, for images that come from Docker Hub.",
+          "hidden": true
+        }
+      }
+    },
+    "generic_options": {
+      "title": "Generic options",
+      "type": "object",
+      "description": "Less common options, typically left at their defaults.",
+      "properties": {
+        "help": {
+          "type": "boolean",
+          "default": false,
+          "description": "Display the help message and exit.",
+          "hidden": true
+        },
+        "tracedir": {
+          "type": "string",
+          "format": "directory-path",
+          "default": "results/pipeline_info",
+          "description": "Directory for the Nextflow timeline/report/trace files.",
+          "hidden": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    { "$ref": "#/$defs/input_output_options" },
+    { "$ref": "#/$defs/read_filtering" },
+    { "$ref": "#/$defs/host_removal" },
+    { "$ref": "#/$defs/container_images" },
+    { "$ref": "#/$defs/generic_options" }
+  ]
+}
