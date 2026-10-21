@@ -1,7 +1,7 @@
 #!/usr/bin/env nextflow
 /*
- * shotgun-metagenomics-nf: taxonomic identification (and, later, AMR gene
- * detection) from unamplified ONT reads -- Rapid Barcoding Kit
+ * shotgun-metagenomics-nf: taxonomic identification and AMR gene
+ * detection from unamplified ONT reads -- Rapid Barcoding Kit
  * (SQK-RBK114), R10.4.1, one MinION flow cell per run.
  *
  * Follows EPI2ME wf-metagenomics' stages (ingest -> filter -> host removal
@@ -52,6 +52,19 @@ def helpMessage() {
                     taxa with fewer reads, or a smaller fraction of the sample's
                     reads, get below_threshold=true in taxon_abundance.tsv, not
                     dropped (default ${params.min_reads} / ${params.min_rel_abundance}, 0 = off)
+      --amr_tool    how reads are matched to AMR genes (default ${params.amr_tool}):
+                      minimap2   fast; the default
+                      abricate   ABRicate (BLAST): the same calls in testing, ~25x slower
+      --amr_db      AMR gene database, from those bundled with ABRicate 1.4.0 (default ${params.amr_db}):
+                      ncbi       NCBI Reference Gene Catalog (AMRFinderPlus), acquired + intrinsic AMR genes
+                      resfinder  ResFinder, acquired genes
+                      argannot   ARG-ANNOT
+                      card       CARD -- advanced: also lists housekeeping efflux pumps and their
+                                 regulators, so its results aren't comparable with the others
+                      megares    MEGARes -- advanced, for the same reason as card
+      --amr_min_identity / --amr_min_coverage
+                    a read's hit to a gene counts at this percent identity, over at
+                    least this percent of the gene's length (default ${params.amr_min_identity} / ${params.amr_min_coverage})
       --host_fasta  build the host-removal index from this FASTA instead of
                     downloading the panhuman-1 human pangenome index
     """.stripIndent()
@@ -92,6 +105,18 @@ def checkParams() {
     }
     if (!(params.min_rel_abundance instanceof Number) || params.min_rel_abundance < 0 || params.min_rel_abundance > 1) {
         problems << "--min_rel_abundance must be a fraction from 0 to 1 (got '${params.min_rel_abundance}')"
+    }
+    if (!(params.amr_tool in ['minimap2', 'abricate'])) {
+        problems << "--amr_tool must be minimap2 or abricate (got '${params.amr_tool}')"
+    }
+    if (!(params.amr_db in ['ncbi', 'resfinder', 'argannot', 'card', 'megares'])) {
+        problems << "--amr_db must be one of ncbi, resfinder, argannot, card, megares (got '${params.amr_db}')"
+    }
+    if (!(params.amr_min_identity instanceof Number) || params.amr_min_identity < 0 || params.amr_min_identity > 100) {
+        problems << "--amr_min_identity must be a percentage from 0 to 100 (got '${params.amr_min_identity}')"
+    }
+    if (!(params.amr_min_coverage instanceof Number) || params.amr_min_coverage < 0 || params.amr_min_coverage > 100) {
+        problems << "--amr_min_coverage must be a percentage from 0 to 100 (got '${params.amr_min_coverage}')"
     }
     if ((params.kraken2_build_fasta as boolean) != (params.kraken2_build_taxonomy as boolean)) {
         problems << "--kraken2_build_fasta and --kraken2_build_taxonomy go together: set both or neither"

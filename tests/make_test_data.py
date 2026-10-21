@@ -21,6 +21,14 @@ leaves gaps -- no kingdom anywhere, no class above microbe_c, a strain
 below a species -- so the lineage columns of taxon_abundance.tsv get
 exercised.
 
+Two real AMR genes, from ABRicate 1.4.0's `ncbi` database
+(tests/amr_genes.fasta), are planted in the microbes so the AMR step has
+something to find: blaCTX-M-15 in microbe_a and blaOXA-66 (an OXA-51-like
+gene) in microbe_c. Reads that span them give amr_genes.tsv a `detected`
+call with a host genus (sample_a: CTX-M in Mockus), a `possible` one
+(sample_b: a single CTX-M read) and an intrinsic one (sample_b: OXA-66 in
+Testella, which the amr_intrinsic.tsv written here lists).
+
   python3 tests/make_test_data.py
 """
 import gzip
@@ -28,6 +36,7 @@ import os
 import random
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+AMR_GENES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "amr_genes.fasta")
 rng = random.Random(20261021)
 
 GENOMES = {"host": 200_000, "microbe_a": 100_000, "microbe_b": 100_000, "microbe_c": 100_000}
@@ -56,6 +65,19 @@ TAXONOMY = [
     (2003, 1003, "strain", "Testella gamma C1"),
 ]
 GENOME_TAXIDS = {"microbe_a": 1001, "microbe_b": 1002, "microbe_c": 2003}
+# genome: (gene, position it's inserted at)
+PLANTED = {"microbe_a": ("blaCTX-M-15", 50_000), "microbe_c": ("blaOXA-66", 30_000)}
+# reads spanning a planted gene, per sample and genome
+AMR_READS = {
+    "sample_a": {"microbe_a": 4},
+    "sample_b": {"microbe_a": 1, "microbe_c": 3},
+}
+# gene_family/closest_allele, genus, note: OXA-66 is flagged in Testella,
+# and CTX-M (found in Mockus) isn't, though listed for another genus
+INTRINSIC = [
+    ("blaOXA-51-like", "Testella", "planted in microbe_c (Testella gamma C1)"),
+    ("blaCTX-M", "Testella", "not where it's planted, so never flagged"),
+]
 N_SHORT = 5    # < min_len 500
 N_LOW_Q = 5    # mean Q7, < min_qual 10
 GOOD_Q, LOW_Q = 20, 7
@@ -90,12 +112,35 @@ def sample_read(genome, lo, hi):
     return revcomp(read) if rng.random() < 0.5 else read
 
 
+def spanning_read(genome, start, end):
+    """A read covering genome[start:end] whole, with 500-1500 bp either side."""
+    start -= rng.randint(500, 1500)
+    end += rng.randint(500, 1500)
+    read = mutate(genome[start:end])
+    return revcomp(read) if rng.random() < 0.5 else read
+
+
+def read_fasta(path):
+    seqs = {}
+    with open(path) as fh:
+        for line in fh:
+            if line.startswith(">"):
+                name = line[1:].split()[0]
+                seqs[name] = ""
+            else:
+                seqs[name] += line.strip().upper()
+    return seqs
+
+
 def fastq_record(name, seq, q):
     return f"@{name}\n{seq}\n+\n{chr(q + 33) * len(seq)}\n"
 
 
 def main():
     genomes = {name: random_seq(n) for name, n in GENOMES.items()}
+    amr = read_fasta(AMR_GENES)
+    for name, (gene, pos) in PLANTED.items():
+        genomes[name] = genomes[name][:pos] + amr[gene] + genomes[name][pos:]
     write_gz(os.path.join(OUT, "host.fasta.gz"), f">host\n{genomes['host']}\n")
     for name in GENOMES:
         if name != "host":
@@ -106,6 +151,10 @@ def main():
         for source, n in counts.items():
             for i in range(n):
                 records.append(fastq_record(f"{sample}_{source}_{i}", sample_read(genomes[source], 600, 5000), GOOD_Q))
+        for source, n in AMR_READS[sample].items():
+            gene, pos = PLANTED[source]
+            for i in range(n):
+                records.append(fastq_record(f"{sample}_{source}_amr_{i}", spanning_read(genomes[source], pos, pos + len(amr[gene])), GOOD_Q))
         for i in range(N_SHORT):
             records.append(fastq_record(f"{sample}_short_{i}", sample_read(genomes["microbe_a"], 100, 400), GOOD_Q))
         for i in range(N_LOW_Q):
@@ -133,6 +182,11 @@ def main():
     with open(os.path.join(tax_dir, "seqid2taxid.map"), "w") as fh:
         for genome, taxid in GENOME_TAXIDS.items():
             fh.write(f"{genome}\t{taxid}\n")
+
+    with open(os.path.join(OUT, "amr_intrinsic.tsv"), "w") as fh:
+        fh.write("# test fixture, written by tests/make_test_data.py\ngene\tgenus\tnote\n")
+        for row in INTRINSIC:
+            fh.write("\t".join(row) + "\n")
 
 
 if __name__ == "__main__":

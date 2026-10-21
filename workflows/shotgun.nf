@@ -3,6 +3,7 @@ include { CHOPPER        } from '../modules/chopper.nf'
 include { DEACON_DEPLETE; HOST_REMOVAL_REPORT } from '../modules/deacon_deplete.nf'
 include { READ_STATS; READ_STATS_REPORT       } from '../modules/read_stats.nf'
 include { KRAKEN2; TAXON_ABUNDANCE            } from '../modules/kraken2.nf'
+include { AMR_DB; AMR_MINIMAP2; AMR_ABRICATE; AMR_REPORT } from '../modules/amr.nf'
 
 workflow WF_SHOTGUN {
 
@@ -51,6 +52,28 @@ workflow WF_SHOTGUN {
     // publishes final_report/taxon_abundance.tsv and
     // <sample>/03_kraken2/<sample>.kraken2.report.txt
     TAXON_ABUNDANCE(KRAKEN2.out.reads, kraken2_db)
+
+    // 5. AMR genes in each sample's host-removed reads, with minimap2 or
+    // ABRicate, then one report across samples that names each gene's
+    // host genus from step 4's calls for the same reads
+    AMR_DB(params.amr_db, file("${projectDir}/assets/amr/ncbi_reference_genes.tsv", checkIfExists: true))
+    if (params.amr_tool == 'abricate') {
+        AMR_ABRICATE(DEACON_DEPLETE.out.reads, params.amr_db)
+        amr_hits = AMR_ABRICATE.out.hits
+    } else {
+        AMR_MINIMAP2(DEACON_DEPLETE.out.reads, AMR_DB.out.fasta)
+        amr_hits = AMR_MINIMAP2.out.hits
+    }
+    // publishes final_report/amr_genes.tsv and
+    // <sample>/04_amr/<sample>.amr_reads.tsv. Sorted for the same reason
+    // as KRAKEN2's input
+    AMR_REPORT(
+        KRAKEN2.out.reads,
+        amr_hits.toSortedList { a, b -> a[0] <=> b[0] }.map { it.collect { sample, hits -> hits } },
+        AMR_DB.out.table,
+        kraken2_db,
+        file(params.amr_intrinsic, checkIfExists: true)
+    )
 
     emit:
     reads   = DEACON_DEPLETE.out.reads

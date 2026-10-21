@@ -1,0 +1,106 @@
+# DRAFT, not yet reviewed (2026-10-21). AMR genes on the chromosome of
+# (nearly) every member of a genus, or of a species within it, so finding
+# one in reads from that genus says little about acquired resistance.
+# AMR_REPORT fills amr_genes.tsv's `intrinsic` column from this list.
+#
+# gene   matches a row's gene_family, or its closest_allele (for genes NCBI
+#        files under a broader family, e.g. aac(6')-Ic under aac(6')).
+#        Names as in assets/amr/ncbi_reference_genes.tsv
+# genus  NCBI Taxonomy genus, matched against the row's host_genera, i.e.
+#        Kraken2's genus for the reads carrying the gene
+# note   species it's intrinsic to, and caveats. Matching is by genus, so
+#        a species-specific gene is flagged in its whole genus
+#
+# Lines starting with # are skipped. One gene may have several rows.
+gene	genus	note
+blaOXA-51-like	Acinetobacter	A. baumannii (OXA-51, -66, -69...); ISAba1 upstream raises expression, which reads alone can't show
+blaADC	Acinetobacter	A. baumannii chromosomal AmpC (Acinetobacter-derived cephalosporinase)
+blaOXA-213-like	Acinetobacter	A. calcoaceticus
+blaOXA-134-like	Acinetobacter	A. lwoffii
+blaOXA-211-like	Acinetobacter	A. johnsonii
+blaOXA-229-like	Acinetobacter	A. bereziniae
+blaPDC	Pseudomonas	P. aeruginosa chromosomal AmpC
+blaOXA-50-like	Pseudomonas	P. aeruginosa (OXA-50/PoxB)
+aph(3')-IIb	Pseudomonas	P. aeruginosa
+catB7	Pseudomonas	P. aeruginosa
+fosA_PA1129	Pseudomonas	P. aeruginosa
+blaPOM	Pseudomonas	P. otitidis
+blaSHV	Klebsiella	K. pneumoniae (SHV-1, -11...); ESBL variants (SHV-2, -5, -12...) are also on plasmids, and are flagged here too when the reads are Klebsiella
+blaOKP-A	Klebsiella	K. quasipneumoniae
+blaOKP-B	Klebsiella	K. quasipneumoniae
+blaOKP-C	Klebsiella	K. quasipneumoniae
+blaOKP-D	Klebsiella	K. quasipneumoniae
+blaLEN	Klebsiella	K. variicola
+blaOXY	Klebsiella	K. oxytoca complex (K. oxytoca, michiganensis, grimontii...)
+ampC-Kaer	Klebsiella	K. aerogenes chromosomal AmpC
+oqxA	Klebsiella	K. pneumoniae; also on plasmids in other Enterobacterales
+oqxB	Klebsiella	K. pneumoniae; also on plasmids in other Enterobacterales
+fosA5	Klebsiella	K. pneumoniae complex; also on plasmids in E. coli
+fosA6	Klebsiella	K. pneumoniae complex; also on plasmids in E. coli
+blaORN	Raoultella	R. ornithinolytica
+blaPLA	Raoultella	R. planticola
+blaEC	Escherichia	E. coli chromosomal AmpC
+blaEC	Shigella	Shigella is E. coli lineage; Kraken2 often can't separate the two
+blaACT	Enterobacter	E. cloacae complex chromosomal AmpC
+blaMIR	Enterobacter	E. cloacae complex chromosomal AmpC
+fosA2	Enterobacter	E. cloacae complex
+blaCMY	Citrobacter	C. freundii complex; CMY-2-like is also the commonest plasmid AmpC (E. coli, Salmonella, Klebsiella), not flagged there
+blaCFE	Citrobacter	C. freundii complex
+blaCKO	Citrobacter	C. koseri, and C. amalonaticus (NCBI files its MAL alleles here)
+blaSED	Citrobacter	C. sedlakii
+blaSRT	Serratia	S. marcescens chromosomal AmpC (SRT and SST)
+aac(6')-Ic	Serratia	S. marcescens
+blaFONA	Serratia	S. fonticola (FONA and SFO)
+blaDHA	Morganella	M. morganii chromosomal AmpC; DHA-1 is also on plasmids in Klebsiella, not flagged there
+blaACC	Hafnia	H. alvei chromosomal AmpC
+aac(2')-Ia	Providencia	P. stuartii
+blaPRC	Providencia	P. rettgeri
+blaKLUC	Kluyvera	K. cryocrescens; blaCTX-M came from Kluyvera chromosomes, but isn't flagged
+blaRAHN	Rahnella	R. aquatilis
+blaA	Yersinia	Y. enterocolitica
+cphA	Aeromonas	A. hydrophila, veronii and others (CphA metallo-beta-lactamase)
+blaMOX	Aeromonas	A. caviae / A. media chromosomal AmpC; MOX is also on plasmids in Klebsiella, not flagged there
+blaOXA-12-like	Aeromonas	A. jandaei, A. sobria (AmpS)
+blaAQU	Aeromonas	A. dhakensis
+blaL1	Stenotrophomonas	S. maltophilia metallo-beta-lactamase
+blaL2	Stenotrophomonas	S. maltophilia
+aph(3')-IIc	Stenotrophomonas	S. maltophilia
+aac(6')-Iz	Stenotrophomonas	S. maltophilia
+blaB	Elizabethkingia	E. meningoseptica (BlaB metallo-beta-lactamase); not Yersinia's blaB
+blaGOB	Elizabethkingia	E. meningoseptica
+blaCME	Elizabethkingia	E. meningoseptica (formerly Chryseobacterium)
+blaIND	Chryseobacterium	C. indologenes
+blaCGA	Chryseobacterium	C. gleum
+blaMUS	Myroides	M. odoratimimus
+blaTUS	Myroides	M. odoratus
+blaOCH	Brucella	Ochrobactrum anthropi; NCBI Taxonomy moved Ochrobactrum into Brucella
+blaOCH	Ochrobactrum	the same, for databases built before that move
+blaCAU	Caulobacter	C. crescentus
+blaJOHN	Flavobacterium	F. johnsoniae
+blaOXA-114-like	Achromobacter	A. xylosoxidans
+blaOXA-22-like	Ralstonia	R. pickettii
+blaOXA-60-like	Ralstonia	R. pickettii
+blaOXA-62-like	Pandoraea	P. pnomenusa
+blaOXA-63-like	Brachyspira	B. pilosicoli
+blaOXA-55-like	Shewanella	S. algae
+blaOXA-48-like	Shewanella	S. xiamenensis / S. oneidensis carry the progenitors of OXA-48 and OXA-181. Review: flagging OXA-48 at all may be unwise
+blaPEN-A	Burkholderia	B. cepacia complex / B. pseudomallei class A (PenA family)
+blaPEN-B	Burkholderia	as blaPEN-A
+blaCARB	Vibrio	V. parahaemolyticus (CARB-17-like); other CARBs are acquired
+bla2	Bacillus	B. cereus group (BcII metallo-beta-lactamase)
+fosB-Bcer	Bacillus	B. cereus group
+cepA	Bacteroides	B. fragilis
+blaCDD	Clostridioides	C. difficile
+blaOXA-61-like	Campylobacter	C. jejuni / C. coli; very common, though not in every strain
+blaOXA-184-like	Campylobacter	C. jejuni
+fosX	Listeria	L. monocytogenes
+aac(6')-Ii	Enterococcus	E. faecium
+msr(C)	Enterococcus	E. faecium
+lsa(A)	Enterococcus	E. faecalis
+vanC	Enterococcus	E. casseliflavus / E. gallinarum (VanC2/3)
+vanC1	Enterococcus	E. gallinarum
+blaC	Mycobacterium	M. tuberculosis complex
+aac(2')-Ic	Mycobacterium	M. tuberculosis complex
+erm(37)	Mycobacterium	M. tuberculosis complex
+blaMAB	Mycobacteroides	M. abscessus
+blaMAB	Mycobacterium	the same, where the database still files M. abscessus under Mycobacterium

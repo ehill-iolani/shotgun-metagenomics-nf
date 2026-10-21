@@ -7,9 +7,9 @@ following the stages of EPI2ME's
 [wf-metagenomics](https://github.com/epi2me-labs/wf-metagenomics), but
 written from scratch.
 
-**Status:** read QC, human read removal and Kraken2 classification are
-in. AMR gene detection comes next; see [docs/CONTRACT.md](docs/CONTRACT.md)
-for the planned outputs.
+**Status:** read QC, human read removal, Kraken2 classification and AMR
+gene detection are in. The list of intrinsic AMR genes
+(`assets/amr/intrinsic_genes.tsv`) is a draft, not yet reviewed.
 
 ## Steps
 
@@ -27,6 +27,16 @@ for the planned outputs.
    database loads once. No Bracken: its read-length model doesn't fit long
    reads. Taxa under `--min_reads` (10) or `--min_rel_abundance` (0.0001)
    are flagged `below_threshold`, not dropped.
+6. **Find AMR genes** in every host-removed read, against one of the
+   databases bundled with [ABRicate](https://github.com/tseemann/abricate)
+   1.4.0 (`--amr_db`: `ncbi`, the default, `resfinder`, `argannot`, or, as
+   advanced options, `card` and `megares`), with
+   [minimap2](https://github.com/lh3/minimap2) (`--amr_tool minimap2`, the
+   default) or ABRicate itself (`--amr_tool abricate`, ~25x slower). A read
+   counts at 90% identity over 80% of the gene. Genes are reported per
+   family (NCBI's), as `detected` (2+ reads) or `possible` (1), with the
+   genus Kraken2 called for the same reads, and flagged where they're
+   usually intrinsic to that genus.
 
 ## Usage
 
@@ -55,7 +65,10 @@ Runs offline on the synthetic data in `tests/data/` (regenerate with
 `python3 tests/make_test_data.py`). It builds its host index from a small
 synthetic "host" genome instead of downloading the human one, and its
 Kraken2 database from the synthetic microbes and a made-up taxonomy
-(`tests/data/kraken2_taxonomy/`) instead of downloading PlusPF.
+(`tests/data/kraken2_taxonomy/`) instead of downloading PlusPF. Two real
+AMR genes (blaCTX-M-15 and blaOXA-66) are planted in the microbes, so the
+AMR step has hits in ABRicate's real databases, which come inside its
+container image.
 
 ## Outputs
 

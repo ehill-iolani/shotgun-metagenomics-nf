@@ -1,0 +1,4 @@
+# test fixture, written by tests/make_test_data.py
+gene	genus	note
+blaOXA-51-like	Testella	planted in microbe_c (Testella gamma C1)
+blaCTX-M	Testella	not where it's planted, so never flagged

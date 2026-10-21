@@ -115,6 +115,51 @@
         }
       }
     },
+    "amr_detection": {
+      "title": "AMR gene detection",
+      "type": "object",
+      "description": "Each host-removed read is searched for antimicrobial resistance genes.",
+      "properties": {
+        "amr_db": {
+          "type": "string",
+          "default": "ncbi",
+          "enum": ["ncbi", "resfinder", "argannot", "card", "megares"],
+          "description": "AMR gene database, from those bundled with ABRicate 1.4.0.",
+          "help_text": "ncbi (the default) is NCBI's Reference Gene Catalog, the genes AMRFinderPlus looks for. resfinder and argannot list acquired resistance genes. card and megares are advanced options: they also list housekeeping efflux pumps and their regulators (e.g. acrB, TolC, H-NS) that every cell of some species carries, so their results aren't comparable with the other three. Gene families and drug classes are NCBI's wherever a gene's sequence is also in the NCBI catalog, whichever database is picked."
+        },
+        "amr_tool": {
+          "type": "string",
+          "default": "minimap2",
+          "enum": ["minimap2", "abricate"],
+          "description": "How reads are matched to AMR genes.",
+          "help_text": "minimap2 (the default) aligns reads to the genes in seconds. abricate runs ABRicate (BLAST) over the reads instead: it made the same calls in testing but takes about 25 times longer, roughly 45 minutes per 10 Gb flow cell."
+        },
+        "amr_min_identity": {
+          "type": "number",
+          "default": 90,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Minimum percent identity for a read's match to a gene to count.",
+          "help_text": "Nanopore reads have a few errors per hundred bases, so a read of a gene identical to the database's still matches it at a little under 100%. 90% allows for that while keeping apart gene families that differ by more."
+        },
+        "amr_min_coverage": {
+          "type": "number",
+          "default": 80,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Minimum percent of a gene's length a read has to cover.",
+          "help_text": "A read that covers only part of a gene, for example at the end of the read, can't show the whole gene is there."
+        },
+        "amr_intrinsic": {
+          "type": "string",
+          "format": "file-path",
+          "exists": true,
+          "description": "Table of genes usually intrinsic to a genus (gene, genus, note).",
+          "help_text": "Fills amr_genes.tsv's intrinsic column. Defaults to assets/amr/intrinsic_genes.tsv; the test profile uses its own.",
+          "hidden": true
+        }
+      }
+    },
     "container_images": {
       "title": "Container images",
       "type": "object",
@@ -123,7 +168,7 @@
         "container_registry": {
           "type": "string",
           "default": "quay.io",
-          "description": "Registry for the biocontainers images (chopper, deacon, kraken2, pandas).",
+          "description": "Registry for the biocontainers images (chopper, deacon, kraken2, minimap2, abricate, pandas).",
           "help_text": "The google_batch profile points this at the project's own Artifact Registry mirror (see scripts/mirror_images.sh) so Batch VMs don't pull from quay.io; pass --container_registry quay.io to pull from upstream instead. The mirror keeps each image's upstream path, so only the host changes.",
           "hidden": true
         },
@@ -162,6 +207,7 @@
     { "$ref": "#/$defs/read_filtering" },
     { "$ref": "#/$defs/host_removal" },
     { "$ref": "#/$defs/taxonomic_classification" },
+    { "$ref": "#/$defs/amr_detection" },
     { "$ref": "#/$defs/container_images" },
     { "$ref": "#/$defs/generic_options" }
   ]
