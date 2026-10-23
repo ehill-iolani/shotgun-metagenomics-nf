@@ -4,12 +4,15 @@
 // sample's index as a prefix (`<i>|<read id>`), which TAXON_ABUNDANCE uses
 // to split the calls back out by sample.
 //
-// --confidence 0.05: a read is only called at a taxon when >= 5% of its
-// k-mers fall in that taxon or below it, else the call moves up the tree
-// until they do. Kraken2's default (0) takes any call at all, so a few
-// stray k-mers in a multi-kb read can make a species call.
-// --minimum-hit-groups 3 (default 2) asks for one more independent hit
-// before any call.
+// --kraken2_confidence (default 0.05): a read is only called at a taxon
+// when >= 5% of its k-mers fall in that taxon or below it, else the call
+// moves up the tree until they do. Kraken2's default (0) takes any call at
+// all, so a few stray k-mers in a multi-kb read can make a species call.
+// 0.05 assumes hac/sup reads: at a fast model's ~8% error only ~5% of
+// 35-mers are error-free, and on real fast-model soil reads it classified
+// 0.02% of reads (0: 34%).
+// --kraken2_min_hit_groups (default 3, Kraken2's 2) asks for one more
+// independent hit before any call.
 process KRAKEN2 {
     // memory follows the database instead, set in nextflow.config
     label 'process_high'
@@ -36,7 +39,7 @@ process KRAKEN2 {
         i=\$((i + 1))
     done \\
       | kraken2 --db ${db} --threads ${task.cpus} \\
-            --confidence 0.05 --minimum-hit-groups 3 \\
+            --confidence ${params.kraken2_confidence} --minimum-hit-groups ${params.kraken2_min_hit_groups} \\
             /dev/stdin \\
       | cut -f 1-4 \\
       | gzip > kraken2.reads.tsv.gz

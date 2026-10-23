@@ -84,6 +84,21 @@
           "description": "Kraken2 database, downloaded once and cached.",
           "help_text": "Both are the Langmead lab's June 2026 PlusPF build: RefSeq bacteria, archaea, viruses, plasmids, human, protozoa and fungi. pluspf16 (the default) is capped at 16 GB and needs about 20 GB of memory; pluspf8 is capped at 8 GB, needs about 10 GB, and misses more reads -- use it for testing or on a smaller machine, not for results you'll report."
         },
+        "kraken2_confidence": {
+          "type": "number",
+          "default": 0.05,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "How much of a read has to agree before Kraken2 calls it at a taxon (Kraken2's --confidence).",
+          "help_text": "The fraction of a read's k-mers that must fall in a taxon or below it for the read to be called there; otherwise the call moves up the tree, or the read stays unclassified. 0.05 suits reads basecalled with a hac or sup model. Reads from a fast model have too many errors to reach it and come back almost all unclassified: use 0 for those."
+        },
+        "kraken2_min_hit_groups": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 1,
+          "description": "Independent database hits a read needs before Kraken2 calls it at all (Kraken2's --minimum-hit-groups).",
+          "help_text": "Kraken2's own default is 2; 3 asks for one more, which cuts calls made on a few stray matches."
+        },
         "min_reads": {
           "type": "integer",
           "default": 10,

@@ -16,6 +16,21 @@ workflow WF_SHOTGUN {
     // 1. merge multi-part fastq(.gz) files per barcode into one file per sample
     MERGE_FASTQ(reads_ch)
 
+    // Kraken2's confidence default suits hac/sup reads; fast-model reads
+    // would come back almost all unclassified, so say so up front
+    if (params.kraken2_confidence > 0) {
+        MERGE_FASTQ.out.model
+            .filter { sample, model -> model.contains('_fast@') }
+            .map { sample, model -> "${sample} (${model})" }
+            .collect()
+            .subscribe { found ->
+                log.warn "Basecalled with a fast model: ${found.join(', ')}. " +
+                    "At its error rate almost no read reaches --kraken2_confidence ${params.kraken2_confidence}, " +
+                    "so expect nearly every read to be unclassified. Re-basecall with a hac or sup model, " +
+                    "or rerun with --kraken2_confidence 0."
+            }
+    }
+
     // 2. length/quality filter
     CHOPPER(MERGE_FASTQ.out.merged)
 

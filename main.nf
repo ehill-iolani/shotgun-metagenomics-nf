@@ -48,6 +48,10 @@ def helpMessage() {
                                  human, protozoa and fungi, capped at 16 GB (needs ~20 GB RAM)
                       pluspf8    PlusPF-8: the same, capped at 8 GB (needs ~10 GB RAM) --
                                  less sensitive, for testing or smaller machines
+      --kraken2_confidence / --kraken2_min_hit_groups
+                    how strict Kraken2's calls are (default ${params.kraken2_confidence} / ${params.kraken2_min_hit_groups}),
+                    set for hac/sup basecalled reads; fast-model reads need
+                    --kraken2_confidence 0 (the pipeline warns when it sees them)
       --min_reads / --min_rel_abundance
                     taxa with fewer reads, or a smaller fraction of the sample's
                     reads, get below_threshold=true in taxon_abundance.tsv, not
@@ -99,6 +103,12 @@ def checkParams() {
     }
     if (!(params.kraken2_db in kraken2Dbs())) {
         problems << "--kraken2_db must be one of ${kraken2Dbs().keySet().join(', ')} (got '${params.kraken2_db}')"
+    }
+    if (!(params.kraken2_confidence instanceof Number) || params.kraken2_confidence < 0 || params.kraken2_confidence > 1) {
+        problems << "--kraken2_confidence must be a fraction from 0 to 1 (got '${params.kraken2_confidence}')"
+    }
+    if (!(params.kraken2_min_hit_groups instanceof Integer) || params.kraken2_min_hit_groups < 1) {
+        problems << "--kraken2_min_hit_groups must be a whole number >= 1 (got '${params.kraken2_min_hit_groups}')"
     }
     if (!(params.min_reads instanceof Integer) || params.min_reads < 0) {
         problems << "--min_reads must be a whole number >= 0 (got '${params.min_reads}')"
