@@ -46,13 +46,14 @@ process KRAKEN2 {
 process TAXON_ABUNDANCE {
     label 'process_low'
     container "${params.container_registry}/biocontainers/pandas:2.2.1"
-    // per-sample reports into <sample>/03_kraken2/, the table into final_report/
+    // per-sample reports into <sample>/03_kraken2/, the table into
+    // final_report/; KRONA's inputs aren't published
     publishDir(
         path: "${params.outdir}",
         mode: 'copy',
         saveAs: { fn ->
-            fn.endsWith('.kraken2.report.txt')
-                ? "${fn - '.kraken2.report.txt'}/03_kraken2/${fn}"
+            fn.startsWith('krona.') ? null
+                : fn.endsWith('.kraken2.report.txt') ? "${fn - '.kraken2.report.txt'}/03_kraken2/${fn}"
                 : "final_report/${fn}"
         }
     )
@@ -64,6 +65,7 @@ process TAXON_ABUNDANCE {
     output:
     path "taxon_abundance.tsv",   emit: table
     path "*.kraken2.report.txt",  emit: reports
+    tuple val(samples), path("krona.*.txt"), emit: krona
 
     script:
     """
@@ -75,6 +77,30 @@ process TAXON_ABUNDANCE {
         --min-reads ${params.min_reads} \\
         --min-rel-abundance ${params.min_rel_abundance} \\
         --out taxon_abundance.tsv \\
-        --report-dir .
+        --report-dir . \\
+        --krona-dir .
+    """
+}
+
+// One interactive Krona chart of every sample's Kraken2 calls, a dataset
+// per sample. ktImportText reads the lineages TAXON_ABUNDANCE wrote, so it
+// needs no taxonomy database of its own (ktImportTaxonomy would)
+process KRONA {
+    label 'process_low'
+    container "${params.container_registry}/biocontainers/krona:2.8.1--pl5321hdfd78af_1"
+    publishDir "${params.outdir}/final_report", mode: 'copy'
+
+    input:
+    tuple val(samples), path(txts)
+
+    output:
+    path "krona.html", emit: html
+
+    script:
+    // `file,name`: Krona takes everything after the first comma as the
+    // dataset name, bar double quotes
+    def datasets = samples.withIndex().collect { s, i -> "'krona.${i}.txt,${s.replace('"', '').replace("'", "'\\''")}'" }
+    """
+    ktImportText -n 'All reads' -o krona.html ${datasets.join(' ')}
     """
 }

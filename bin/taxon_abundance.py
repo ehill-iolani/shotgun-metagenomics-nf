@@ -11,6 +11,13 @@ with the sample's position in --samples: `<i>|<read id>`. Kraken2's own
 written here instead, in the same format: percent of the sample's reads,
 clade reads, direct reads, rank code, taxid, indented name.
 
+With --krona-dir it also writes krona.<i>.txt per sample, in the order of
+--samples, for Krona's ktImportText (KRONA turns them into krona.html):
+reads, then the call's lineage at the ranks taxon_abundance.tsv has
+columns for, plus the call itself where it sits below or between them
+(a strain, a species group). Named by index, not sample, because
+ktImportText takes `file,name` and a file name can't hold `:` or `,`.
+
 Names, ranks and lineages come from the NCBI taxonomy dump the database
 was built with (nodes.dmp, names.dmp). Pure standard library, like
 read_stats.py.
@@ -18,7 +25,7 @@ read_stats.py.
   taxon_abundance.py --reads kraken2.reads.tsv.gz --samples a b \\
       --nodes db/nodes.dmp --names db/names.dmp \\
       --min-reads 10 --min-rel-abundance 0.0001 \\
-      --out taxon_abundance.tsv --report-dir .
+      --out taxon_abundance.tsv --report-dir . --krona-dir .
 """
 import argparse
 import csv
@@ -127,6 +134,28 @@ def write_report(path, counts, nodes, names, lineages):
                 stack.append((kid, kid_code, depth + 1))
 
 
+def write_krona(path, counts, nodes, names, lineages):
+    """reads<TAB>level<TAB>level..., most reads first. Unclassified reads are
+    a top-level `Unclassified` wedge; reads called at the root itself have
+    no levels, which Krona leaves unassigned at its centre."""
+    paths = {}
+    for taxid, (reads, _) in counts.items():
+        if not reads:
+            continue
+        if taxid == 0:
+            levels = ("Unclassified",)
+        else:
+            # root first; ranks without a column (no rank, clade, strain...) are left out
+            levels = [names[t] for t in reversed(lineages[taxid]) if nodes[t][1] in RANK_COLUMN]
+            if taxid != 1 and nodes[taxid][1] not in RANK_COLUMN:
+                levels.append(names[taxid])
+            levels = tuple(levels)
+        paths[levels] = paths.get(levels, 0) + reads
+    with open(path, "w") as fh:
+        for levels, reads in sorted(paths.items(), key=lambda kv: (-kv[1], kv[0])):
+            fh.write("\t".join([str(reads), *levels]) + "\n")
+
+
 def rows(sample, counts, nodes, names, lineages, min_reads, min_rel):
     total = sum(r for r, _ in counts.values())
     out = []
@@ -162,6 +191,7 @@ def main():
     p.add_argument("--min-rel-abundance", type=float, default=0)
     p.add_argument("--out", required=True, help="output TSV")
     p.add_argument("--report-dir", required=True, help="where <sample>.kraken2.report.txt go")
+    p.add_argument("--krona-dir", help="also write krona.<i>.txt per sample here")
     args = p.parse_args()
 
     counts = read_calls(args.reads, len(args.samples))
@@ -170,8 +200,10 @@ def main():
     names = read_names(args.names, {t for path in lineages.values() for t in path})
 
     table = []
-    for sample, c in zip(args.samples, counts):
+    for i, (sample, c) in enumerate(zip(args.samples, counts)):
         write_report(os.path.join(args.report_dir, f"{sample}.kraken2.report.txt"), c, nodes, names, lineages)
+        if args.krona_dir:
+            write_krona(os.path.join(args.krona_dir, f"krona.{i}.txt"), c, nodes, names, lineages)
         table += rows(sample, c, nodes, names, lineages, args.min_reads, args.min_rel_abundance)
 
     table.sort(key=lambda r: r["sample"])   # stable: each sample's rows keep their order

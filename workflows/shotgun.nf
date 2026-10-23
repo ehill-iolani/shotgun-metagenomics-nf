@@ -2,7 +2,7 @@ include { MERGE_FASTQ    } from '../modules/merge_fastq.nf'
 include { CHOPPER        } from '../modules/chopper.nf'
 include { DEACON_DEPLETE; HOST_REMOVAL_REPORT } from '../modules/deacon_deplete.nf'
 include { READ_STATS; READ_STATS_REPORT       } from '../modules/read_stats.nf'
-include { KRAKEN2; TAXON_ABUNDANCE            } from '../modules/kraken2.nf'
+include { KRAKEN2; TAXON_ABUNDANCE; KRONA     } from '../modules/kraken2.nf'
 include { AMR_DB; AMR_MINIMAP2; AMR_ABRICATE; AMR_REPORT } from '../modules/amr.nf'
 
 workflow WF_SHOTGUN {
@@ -52,6 +52,8 @@ workflow WF_SHOTGUN {
     // publishes final_report/taxon_abundance.tsv and
     // <sample>/03_kraken2/<sample>.kraken2.report.txt
     TAXON_ABUNDANCE(KRAKEN2.out.reads, kraken2_db)
+    // publishes final_report/krona.html
+    KRONA(TAXON_ABUNDANCE.out.krona)
 
     // 5. AMR genes in each sample's host-removed reads, with minimap2 or
     // ABRicate, then one report across samples that names each gene's
