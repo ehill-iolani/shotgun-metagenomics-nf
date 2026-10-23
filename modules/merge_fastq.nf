@@ -1,8 +1,8 @@
 process MERGE_FASTQ {
     tag "$sample"
     label 'process_low'
-    // not published: these reads still include any human reads (see
-    // docs/CONTRACT.md), so they stay in the work dir only
+    // not published: these reads still include any human reads, so they
+    // stay in the work dir only
 
     input:
     tuple val(sample), path(fastq)

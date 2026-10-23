@@ -11,7 +11,7 @@
  * Bracken modelled on 300 bp reads), so this one filters by quality,
  * always removes human reads, and reports Kraken2 calls directly.
  *
- * Output files and their columns: docs/CONTRACT.md.
+ * Output files: README.md.
  */
 
 nextflow.enable.dsl = 2

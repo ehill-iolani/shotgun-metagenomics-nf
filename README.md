@@ -77,4 +77,19 @@ container image.
 
 ## Outputs
 
-See [docs/CONTRACT.md](docs/CONTRACT.md).
+Paths are relative to `--outdir`; `<sample>` is the samplesheet's `sample`.
+
+| File | What it holds |
+|---|---|
+| `<sample>/02_host_removed/<sample>.host_removed.fastq.gz` | reads after length/quality filtering and human read removal |
+| `<sample>/03_kraken2/<sample>.kraken2.report.txt` | Kraken2-format report (for Pavian, KrakenTools, etc.) |
+| `<sample>/04_amr/<sample>.amr_reads.tsv` | each read carrying an AMR gene, with its identity, coverage and Kraken2 call |
+| `final_report/read_stats.tsv`, `read_length_qscore_hist.tsv`, `read_qc_summary.html` | read length and Q-score summaries at each stage |
+| `final_report/host_removal.tsv` | reads and bases removed as human, per sample |
+| `final_report/taxon_abundance.tsv` | reads per taxon per sample, with lineage and `below_threshold` flag |
+| `final_report/krona.html` | interactive Krona chart of the taxa, one dataset per sample |
+| `final_report/amr_genes.tsv` | AMR gene families per sample: reads, abundance, `detected`/`possible` call, host genera, intrinsic flag |
+| `pipeline_info/` | Nextflow timeline, report and trace |
+
+Reads still containing human sequence (merged and filtered reads) are never
+published; they stay in Nextflow's work directory.

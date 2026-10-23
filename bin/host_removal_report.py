@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
 Combine Deacon filter summaries (`deacon filter -s <sample>.deacon.json`)
-into one row per sample: final_report/host_removal.tsv, columns in
-docs/CONTRACT.md. The sample name is the JSON's filename up to
-`.deacon.json`.
+into one row per sample: final_report/host_removal.tsv. The sample name
+is the JSON's filename up to `.deacon.json`.
 
 Pure standard library, like read_stats.py.
 

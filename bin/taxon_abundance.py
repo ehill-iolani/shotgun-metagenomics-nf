@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Turn KRAKEN2's per-read calls for all samples into
-final_report/taxon_abundance.tsv (columns in docs/CONTRACT.md) and a
-Kraken2-style report per sample (<sample>.kraken2.report.txt).
+final_report/taxon_abundance.tsv and a Kraken2-style report per sample
+(<sample>.kraken2.report.txt).
 
 KRAKEN2 classifies every sample in one run, so its input is one file of
 per-read calls (C/U, read ID, taxid, length) whose read IDs are prefixed

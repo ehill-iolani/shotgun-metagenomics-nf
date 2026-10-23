@@ -15,6 +15,7 @@ assets/db_cache/
 scratch.sh
 notes.md
 notes.sh
+docs/
 
 # Python
 __pycache__/

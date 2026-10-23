@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Turn each sample's AMR gene hits into final_report/amr_genes.tsv and
-<sample>.amr_reads.tsv (columns in docs/CONTRACT.md), naming the organism
-each gene was found in from the same reads' Kraken2 calls.
+<sample>.amr_reads.tsv, naming the organism each gene was found in from
+the same reads' Kraken2 calls.
 
 Hits are minimap2 PAF (--format paf) or ABRicate's table (--format
 abricate, run with --noheader), one file per sample named
