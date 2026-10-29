@@ -26,12 +26,12 @@ gene detection are in. The list of intrinsic AMR genes
    --minimum-hit-groups 3` (`--kraken2_confidence`,
    `--kraken2_min_hit_groups`). These assume hac or sup basecalling: fast
    model reads come back almost all unclassified at 0.05 (the pipeline warns
-   when it sees them; use `--kraken2_confidence 0` for those). All samples go through one Kraken2 run, so the
-   database loads once. No Bracken: its read-length model doesn't fit long
-   reads. Taxa under `--min_reads` (10) or `--min_rel_abundance` (0.0001)
-   are flagged `below_threshold`, not dropped. A
-   [Krona](https://github.com/marbl/Krona) chart shows the same calls,
-   one dataset per sample.
+   when it sees them; use `--kraken2_confidence 0` for those). All samples
+   go through one Kraken2 run, so the database loads once. No Bracken: its
+   read-length model doesn't fit long reads. Taxa under `--min_reads` (10)
+   or `--min_rel_abundance` (0.0001) are flagged `below_threshold`, not
+   dropped. A [Krona](https://github.com/marbl/Krona) chart shows the same
+   calls, one dataset per sample.
 6. **Find AMR genes** in every host-removed read, against one of the
    databases bundled with [ABRicate](https://github.com/tseemann/abricate)
    1.4.0 (`--amr_db`: `ncbi`, the default, `resfinder`, `argannot`, or, as
