@@ -9,7 +9,7 @@ process MERGE_FASTQ {
 
     output:
     tuple val(sample), path("${sample}.merged.fastq.gz"), emit: merged
-    tuple val(sample), env(model),                        emit: model
+    tuple val(sample), env('model'),                      emit: model
 
     script:
     // ONT barcode folders are usually split into many part-files
