@@ -14,6 +14,8 @@ gene detection are in. The list of intrinsic AMR genes
 ## Steps
 
 1. **Merge** each sample's part-files (a MinKNOW barcode folder) into one.
+   A damaged `.fastq.gz` part stops the run here with the sample and file
+   named, rather than silently losing every read after it.
 2. **Filter** with [chopper](https://github.com/wdecoster/chopper): at least
    500 bp and mean Q10 by default.
 3. **Remove human reads** with [Deacon](https://github.com/bede/deacon) and
