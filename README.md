@@ -54,7 +54,8 @@ nextflow run main.nf -profile docker --input samplesheet.csv --outdir results
 
 `samplesheet.csv` has two columns, `sample,fastq`. `fastq` may be a glob,
 e.g. `fastq_pass/barcode01/*.fastq.gz`, which resolves relative to the
-launch directory.
+launch directory. Each row needs its own `sample` name (compared ignoring
+case): two rows with the same name stop the run at launch.
 
 The first run downloads the 3.3 GB human index and the 11 GB PlusPF-16
 archive (15 GB unpacked) into `assets/db_cache/` (`--db_cache`); later runs
